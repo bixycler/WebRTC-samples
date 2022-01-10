@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree.
+-->
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC Javascript code samples">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <meta itemprop="description" content="Client-side WebRTC code samples">
+    <meta itemprop="image" content="images/webrtc-icon-192x192.png">
+    <meta itemprop="name" content="WebRTC code samples">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta id="theme-color" name="theme-color" content="#ffffff">
+
+    <base target="_blank">
+
+    <title>WebRTC samples</title>
+
+    <link rel="icon" sizes="192x192" href="images/webrtc-icon-192x192.png">
+    <link rel="stylesheet" href="css/main.css"/>
+
+    <style>
+        h2 {
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        h3 {
+            border-top: none;
+        }
+
+        section {
+            border-bottom: 1px solid #eee;
+            margin: 0 0 1.5em 0;
+            padding: 0 0 1.5em 0;
+        }
+
+        section:last-child {
+            border-bottom: none;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+<div id="container">
+
+    <h1>WebRTC samples</h1>
+
+    <section>
+
+        <p>
+            This is a collection of small samples demonstrating various parts of the <a
+                href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API">WebRTC APIs</a>. The code for these samples are available in the GitHub repository <a href="https://github.com/bixycler/WebRTC-samples">WebRTC-samples</a>, which is extracted from the full collection of <a href="https://github.com/webrtc">WebRTC.org</a>'s
+            <a href="https://github.com/webrtc/samples">samples</a>.
+        </p>
+
+        <p>Most of the samples use <a href="https://github.com/webrtc/adapter">adapter.js</a>, a shim to insulate apps
+            from spec changes and prefix differences.</p>
+
+        <p><a href="https://webrtc.org/getting-started/testing" title="Command-line flags for WebRTC testing">https://webrtc.org/getting-started/testing</a>
+            lists command line flags useful for development and testing with Chrome.</p>
+
+        <p class="warning"><strong>Warning:</strong> It is highly recommended to use headphones when testing these
+            samples, as it will otherwise risk loud audio feedback on your system.</p>
+    </section>
+
+    <section>
+
+        <h2 id="getusermedia"><a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia">getUserMedia():</a>
+        </h2>
+        <p class="description">Access media devices</p>
+        <ul>
+            <li><a href="content/getusermedia/gum/index.html">Basic getUserMedia demo</a></li>
+        </ul>
+        <h2 id="devices">Devices:</h2>
+        <p class="description">Query media devices</p>
+        <ul>
+            <li><a href="content/devices/input-output/index.html">Choose camera, microphone and speaker</a></li>
+
+            <li><a href="content/devices/multi/index.html">Choose media source and audio output</a></li>
+        </ul>
+
+        <h2 id="capture">Stream capture:</h2>
+        <p class="description">Stream from canvas or video elements</p>
+        <ul>
+
+            <li><a href="content/capture/video-video/index.html">Stream from a video element to a video element</a></li>
+
+            <li><a href="content/capture/video-pc/index.html">Stream from a video element to a peer connection</a></li>
+        </ul>
+
+        <h2 id="peerconnection"><a href="https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection">RTCPeerConnection:</a>
+        </h2>
+        <p class="description">Controlling peer connectivity</p>
+        <ul>
+            <li><a href="content/peerconnection/pc1/index.html">Basic peer connection demo in a single tab</a></li>
+
+            <li><a href="content/peerconnection/channel/index.html">Basic peer connection demo between two tabs</a></li>
+
+        </ul>
+        <h2 id="datachannel"><a
+                href="https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel">RTCDataChannel:</a></h2>
+        <p class="description">Send arbitrary data over peer connections</p>
+        <ul>
+            <li><a href="content/datachannel/basic/index.html">Transmit text</a></li>
+        </ul>
+
+        </ul>
+
+    </section>
+
+</div>
+
+</body>
+</html>

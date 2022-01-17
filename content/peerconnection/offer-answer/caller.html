@@ -13,7 +13,7 @@
 
     <base target="_blank">
 
-    <title>Peer connection - Sender</title>
+    <title>Peer connection - Caller</title>
 
     <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
     <link rel="stylesheet" href="../../../css/main.css"/>
@@ -32,15 +32,28 @@
         <button id="hangupButton">Hang Up</button>
     </div>
 
-    <p>Click "Start" to get user media; then paste the signaling SDP to the "<span class="txt-offer-answer"></span> SDP" text area bellow; then click "Call" to call the remote peer (<span class="txt-sender-receiver"></span>); finally click "Hang Up" to end the call.
+    <p>Click "Start" to get user media and to create Offer SDP; then do signaling (exchange SDPs with the receiver); then click "Call" to call the remote peer (receiver); finally click "Hang Up" to end the call.
     </p>
     
-    <h4>Offer SDP</h4>
-    <textarea id="offer"></textarea>
+    <span id="error-message" class="text-error"></span>
 
+    <h4>Offer SDP (to the receiver)</h4>
+    <input id="offer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
+    <textarea id="offer" class="text-SDP" placeholder="Click Start to generate Offer SDP for the receiver ..."></textarea>
+
+    <h4>Answer SDP (from the receiver)</h4>
+    <input id="answer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
+    <textarea id="answer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
+
+    <h4>Caller ICE Candidates</h4>
+    <textarea id="caller-candidates" class="text-candidates"></textarea>
+
+    <h4>Receiver ICE Candidates</h4>
+    <textarea id="receiver-candidates" class="text-candidates"></textarea>
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="js/main.js" async></script>
+<script src="../../../js/utils.js" async></script>
+<script src="js/caller.js" async></script>
 
 </body>
 </html>

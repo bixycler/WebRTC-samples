@@ -27,16 +27,21 @@
     <h1><a href="https://bixycler.github.io/WebRTC-samples/" title="WebRTC samples homepage">WebRTC samples</a>
         <span>Peer connection</span></h1>
 
-    <p>This sample shows how to setup a connection between two peers in two windows (in different machines) with manual offer-answer signaling via
-        <a href="https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection">RTCPeerConnection</a>.
+    <p>This sample shows how to setup a connection between two peers (caller &amp; receiver) in two windows (in different machines) using <a href="https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection">RTCPeerConnection</a> with <b>manual <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity">offer-answer signaling</a></b> and <i>without <a href="https://webrtcglossary.com/trickle-ice/">ICE trickling</a></i>.
     </p>
 
-    <iframe id="peer-page" src="sender.html" width="100%" height="600" style="border: 0;">
+    <span>
+      This is a 
+      <select id="peer-roles" class="bold-when-diabled">
+        <option value="caller">caller</option>
+        <option value="receiver">receiver</option>
+      </select>.
+    </span>
+
+    <iframe id="peer-page" src="" height="100px";  style="width: 100%; border: none; overflow: hidden;"  scrolling="no" allow="clipboard-read; clipboard-write">
     </iframe>
 
-    <p>View the console to see logging. The <code>MediaStream</code> object <code>localStream</code>, and the <code>RTCPeerConnection</code>
-        objects <code>pc1</code> and <code>pc2</code> are in global scope, so you can inspect them in the console as
-        well.</p>
+    <p>View the console to see logging. After "Start" button pressed, the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaStream">MediaStream</a> object <code>localStream</code>, and the <a href="https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection">RTCPeerConnection</a> object <code>pc</code> of this peer (<span class="text-peer-role"></span>) can be inspected via <code>pp.contentWindow</code>, e.g. <code>pp.contentWindow.pc</code>.</p>
 
     <p>For more information about RTCPeerConnection, see <a href="http://www.html5rocks.com/en/tutorials/webrtc/basics/"
                                                             title="HTML5 Rocks article about WebRTC by Sam Dutton">Getting
@@ -50,10 +55,35 @@
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script>
-    let pp = document.getElementById("peer-page");
-    pp.onload = function(){
-      pp.height = pp.contentWindow.document.body.scrollHeight;
-    }
+  const peerRoles = document.getElementById("peer-roles");
+  const pp = document.getElementById("peer-page");
+  const urlParts = document.URL.split('#');
+  let peerRole = (urlParts.length > 1) ? urlParts[1] : null;
+  if(peerRole){
+    setPeerRole(peerRole);
+  }else{
+    peerRoles.selectedIndex = -1;
+  }
+  peerRoles.onchange = function(){
+    setPeerRole(peerRoles.value);
+  }
+  function setPeerRole(prole){
+    peerRole = prole;
+    peerRoles.value = peerRole;
+    peerRoles.disabled = true;
+    const tpr = document.getElementsByClassName("text-peer-role");
+    for(i = 0; i < tpr.length; i++){ tpr[i].innerHTML = peerRole; }
+    pp.src = peerRole+'.html';
+  }
+  function updateFrame(e){
+    //console.log("pp.e: ",e); 
+    //console.log('pp.scrollHeight = '+pp.contentWindow.document.body.scrollHeight);
+    pp.height = pp.contentWindow.document.body.scrollHeight;
+  }
+  pp.onload = function(e){ //updateFrame(e);
+    const observer = new ResizeObserver(updateFrame);
+    observer.observe(pp.contentWindow.document.body);
+  };
 </script>
 
 </body>

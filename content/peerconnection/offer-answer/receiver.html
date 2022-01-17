@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC code samples">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <meta itemprop="description" content="Client-side WebRTC code samples">
+    <meta itemprop="image" content="../../../images/webrtc-icon-192x192.png">
+    <meta itemprop="name" content="WebRTC code samples">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta id="theme-color" name="theme-color" content="#ffffff">
+
+    <base target="_blank">
+
+    <title>Peer connection - Caller</title>
+
+    <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
+    <link rel="stylesheet" href="../../../css/main.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+
+</head>
+
+<body>
+
+    <video id="localVideo" title="Local video" playsinline autoplay muted></video>
+    <video id="remoteVideo" title="Remote video" playsinline autoplay></video>
+
+    <div class="box">
+        <button id="startButton">Start</button>
+        <button id="hangupButton">Hang Up</button>
+    </div>
+
+    <p>Paste the Offer SDP got from the caller; then click "Start" to get user media and to create Answer SDP; then send the Answer SDP to the caller and wait for call from the caller; finally click "Hang Up" to end the call.
+    </p>
+    
+    <span id="error-message" class="text-error"></span>
+
+    <h4>Offer SDP (from the caller)</h4>
+    <input id="offer-status" type="button" value="Paste Offer" class="bold-when-diabled status-button">
+    <textarea id="offer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
+
+    <h4>Answer SDP (to the caller)</h4>
+    <input id="answer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
+    <textarea id="answer" class="text-SDP" placeholder="Click Start to generate Answer SDP for the caller ..."></textarea>
+
+    <h4>Caller ICE Candidates</h4>
+    <textarea id="caller-candidates" class="text-candidates"></textarea>
+
+    <h4>Receiver ICE Candidates</h4>
+    <textarea id="receiver-candidates" class="text-candidates"></textarea>
+
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="../../../js/utils.js" async></script>
+<script src="js/receiver.js" async></script>
+
+</body>
+</html>

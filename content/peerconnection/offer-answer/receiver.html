@@ -37,10 +37,12 @@
     <span id="error-message" class="text-error"></span>
 
     <h4>Offer SDP (from the caller)</h4>
+    <label for="offer-deflated" class="status-button"><input id="offer-deflated" type="checkbox" value="offer-deflated" checked="checked">Deflated</label>
     <input id="offer-status" type="button" value="Paste Offer" class="bold-when-diabled status-button">
     <textarea id="offer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
 
     <h4>Answer SDP (to the caller)</h4>
+    <label for="answer-deflated" class="status-button"><input id="answer-deflated" type="checkbox" value="answer-deflated" checked="checked">Deflated</label>
     <input id="answer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
     <textarea id="answer" class="text-SDP" placeholder="Click Start to generate Answer SDP for the caller ..."></textarea>
 

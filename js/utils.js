@@ -30,9 +30,10 @@ async function diffClipboard(str) {
   return strDiff(s, str);
 }
 
-async function copyToClipboard(txt) {
-  await navigator.clipboard.writeText(txt.value);
-  let diff = await diffClipboard(txt.value);
+async function copyToClipboard(txt, deflate=false) {
+  let txtval = deflate? await deflateStr(txt.value, base64=true): txt.value;
+  await navigator.clipboard.writeText(txtval);
+  let diff = await diffClipboard(txtval);
   if(diff){
     handleError(`copyToClipboard(${txt.id}):`, `Mismatch result: clipboard[${diff.di}..] = "${diff.ds1}" <> "${diff.ds2}"`);
     return false;
@@ -41,15 +42,15 @@ async function copyToClipboard(txt) {
   return true;
 }
 
-async function pasteFromClipboard(txt) {
-  let t = await navigator.clipboard.readText();
-  txt.value = t;
+async function pasteFromClipboard(txt, deflated=false) {
+  let txtval = await navigator.clipboard.readText();
+  txt.value = deflated? await inflateStr(txtval): txtval;
 }
 
-async function updateTooltip(but, txt, tip){
+async function updateTooltip(but, txt, tip, deflated=false){
   if(but.disabled){ return; }
   try{
-    let diff = await diffClipboard(txt.value);
+    let diff = await diffClipboard(deflated? await deflateStr(txt.value, base64=true): txt.value);
     but.title = diff? 'click me!': tip;
     //console.log(`updateTooltip(${but.id}): ${but.title}`);
   }catch(e){
@@ -85,3 +86,18 @@ Element.prototype.setAttribute = function(attr,val){
   this.dispatchEvent(new Event('input'));
 }
 */
+
+async function deflateStr(s, base64 = false, format = 'gzip'){
+  const ss = new Blob([s]).stream().pipeThrough(new CompressionStream(format)); //stream of deflated string
+  const sb = await new Response(ss).arrayBuffer().then(b => new Uint8Array(b)); //deflated byte array
+  return base64? btoa(String.fromCharCode.apply(null,sb)): sb;
+}
+
+async function inflateStr(sb, format = 'gzip'){
+  if(!(sb instanceof Uint8Array || typeof sb == 'string')){ 
+    throw new TypeError('Parameter sb is not an instance of Uint8Array nor a string.');}
+  if(typeof sb == 'string'){ sb = Uint8Array.from(atob(sb), c => c.charCodeAt(0));}
+  const ss = new Blob([sb]).stream().pipeThrough(new DecompressionStream(format)); //stream of inflated sb
+  const s = await new Response(ss).text(); //inflated string
+  return s;
+}

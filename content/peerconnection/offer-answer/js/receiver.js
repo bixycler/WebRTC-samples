@@ -36,14 +36,23 @@ const offer = document.getElementById('offer');
 const answer = document.getElementById('answer');
 const offerStatus = document.getElementById('offer-status');
 const answerStatus = document.getElementById('answer-status');
+const offerDeflated = document.getElementById('offer-deflated');
+const answerDeflated = document.getElementById('answer-deflated');
 const callerCandidates = document.getElementById('caller-candidates');
 const receiverCandidates = document.getElementById('receiver-candidates');
+const coffer = {txt:offer, but:offerStatus, deflated:offerDeflated};
+const canswer = {txt:answer, but:answerStatus, deflated:answerDeflated};
 offerStatus.addEventListener('click', async()=>{
-  await pasteFromClipboard(offer); updateTooltip(offerStatus,offer,'(done)'); });
+  await pasteFromClipboard(offer, offerDeflated.checked);
+  updateTooltip(offerStatus,offer,'(done)', offerDeflated.checked);
+});
 answerStatus.addEventListener('click', async()=>{
-  await copyToClipboard(answer); updateTooltip(answerStatus,answer,'(done)'); });
-[{txt:offer, but:offerStatus}, {txt:answer, but:answerStatus}].forEach(({txt,but})=>{
-  but.addEventListener('mousemove', ()=>updateTooltip(but,txt,'(done)'))});
+  await copyToClipboard(answer, answerDeflated.checked);
+  updateTooltip(answerStatus,answer,'(done)', answerDeflated.checked);
+});
+[coffer, canswer].forEach(({txt,but,deflated})=>{
+  but.addEventListener('mousemove', ()=>updateTooltip(but,txt,'(done)', deflated.checked));
+});
 offer.addEventListener('input', ()=>{
   startButton.disabled = !offer.value.trim();
   let candidates = offer.value.match(/a=candidate:[^\r\n]*/g);
@@ -64,6 +73,8 @@ const ICE_config = {
 
 async function start() {
   startButton.disabled = true;
+
+  // Start UserMedia
   if (!localStream) {
     console.log('Requesting local stream (user media)');
     try {
@@ -85,11 +96,18 @@ async function start() {
     console.log(`- Audio device: ${audioTracks[0].label}`);
   }
 
+  // Start PeerConnection
   pc = new RTCPeerConnection(ICE_config);
   console.log('Created peer connection object pc with ICE_config = ', ICE_config);
   console.log('ICE gathering state:', pc.iceGatheringState);
   console.log('ICE state:', pc.iceConnectionState);
   console.log('Signaling state:', pc.signalingState);
+  pc.addEventListener('negotiationneeded', async function(e){
+    console.log('Starting SDP negotiation'); // NEVER on a receiver!!!
+  });
+  pc.addEventListener('signalingstatechange', function(e){
+    console.log('Signaling state:', pc.signalingState);
+  });
   pc.addEventListener('icegatheringstatechange', function(e){
     console.log('ICE gathering state:', pc.iceGatheringState);
     answerStatus.value = `ICE candidate ${pc.iceGatheringState}`;
@@ -106,9 +124,6 @@ async function start() {
   pc.addEventListener('iceconnectionstatechange', function(e){
     console.log('ICE state:', pc.iceConnectionState);
   });
-  pc.addEventListener('signalingstatechange', function(e){
-    console.log('Signaling state:', pc.signalingState);
-  });
   pc.addEventListener('track', function(e){
     if (remoteVideo.srcObject !== e.streams[0]) {
       remoteVideo.srcObject = e.streams[0];
@@ -116,18 +131,19 @@ async function start() {
     }
   });
 
-  //localStream.getTracks().forEach(track => pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]}));
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-  console.log('Added local stream to pc');
-
   console.log('pc.setRemoteDescription() start');
   try {
     await pc.setRemoteDescription({type: 'offer', sdp: offer.value});
     console.log('pc.setRemoteDescription() completed: ', pc.remoteDescription);
+    console.log('Added remote stream to pc', pc.getReceivers()); //pc.getTransceivers()
   } catch (e) {
     handleError('pc.setRemoteDescription():', e);
     return;
   }
+
+  //localStream.getTracks().forEach(track => pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]}));
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); // REUSE transceivers created by pc.setRemoteDescription() [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
+  console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
 
   console.log('pc.setLocalDescription() start');
   try {

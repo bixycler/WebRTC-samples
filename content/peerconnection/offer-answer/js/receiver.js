@@ -2,6 +2,16 @@
 
 //require '../../../../js/utils.js';
 
+var localStream = null;
+var pc = null;
+const ICE_config = {
+  'iceServers': [
+    {
+      'url': 'stun:stun.l.google.com:19302'
+    }
+  ]  
+};
+
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
 startButton.disabled = true;
@@ -25,6 +35,24 @@ remoteVideo.addEventListener('resize', function() {
   }
   console.log(`Remote video size changed to ${remoteVideo.videoWidth}x${remoteVideo.videoHeight}`);
 });
+
+const signalingState = document.getElementById('signaling-state');
+const signst = {state:'signalingState', dome:signalingState, caption:'Signaling state',
+  colormap:{'':'black', 'stable':'blue', 'closed':'purple'}};
+const candidateState = document.getElementById('candidate-state');
+const candst = {state:'iceGatheringState', dome:candidateState, caption:'ICE Candidate state',
+  colormap:{'':'black', 'complete':'blue'}};
+const iconnectionState = document.getElementById('iconnection-state');
+const conist = {state:'iceConnectionState', dome:iconnectionState, caption:'ICE Connection state',
+  colormap:{'':'black', 'connected':'blue','completed':'blue', 'disconnected':'orange', 'closed':'purple', 'failed':'red'}};
+const connectionState = document.getElementById('connection-state');
+const connst = {state:'connectionState', dome:connectionState, caption:'Connection state',
+  colormap:{'':'black', 'connected':'blue', 'disconnected':'orange', 'closed':'purple', 'failed':'red'}};
+function updateState({state, dome, caption, colormap}){
+  console.log(`${caption}: ${pc[state]}`);
+  let color = pc[state] in colormap? colormap[pc[state]]: colormap[''];
+  dome.innerHTML += (dome.innerHTML? ' >> ':'') + `<span style="color:${color}">${pc[state]}</span>`;
+}
 
 const errmsg = document.getElementById('error-message');
 function handleError(msg, e) {
@@ -60,16 +88,6 @@ offer.addEventListener('input', ()=>{
   callerCandidates.value = candidates.join('\n');
 });
 
-var localStream = null;
-var pc = null;
-const ICE_config = {
-  'iceServers': [
-    {
-      'url': 'stun:stun.l.google.com:19302'
-    }
-  ]  
-};
-
 
 async function start() {
   startButton.disabled = true;
@@ -99,19 +117,15 @@ async function start() {
   // Start PeerConnection
   pc = new RTCPeerConnection(ICE_config);
   console.log('Created peer connection object pc with ICE_config = ', ICE_config);
-  console.log('ICE gathering state:', pc.iceGatheringState);
-  console.log('ICE state:', pc.iceConnectionState);
-  console.log('Signaling state:', pc.signalingState);
+  updateState(signst); updateState(candst); updateState(conist); updateState(connst); 
   pc.addEventListener('negotiationneeded', async function(e){
     console.log('Starting SDP negotiation'); // NEVER on a receiver!!!
   });
-  pc.addEventListener('signalingstatechange', function(e){
-    console.log('Signaling state:', pc.signalingState);
-  });
+  pc.addEventListener('signalingstatechange', function(e){ updateState(signst); });
   pc.addEventListener('icegatheringstatechange', function(e){
-    console.log('ICE gathering state:', pc.iceGatheringState);
+    updateState(candst);
     answerStatus.value = `ICE candidate ${pc.iceGatheringState}`;
-    if(pc.iceGatheringState==='complete'){
+    if(pc.iceGatheringState=='complete'){
       answerStatus.value = 'Copy Answer';
       answerStatus.disabled = false;
     }
@@ -121,9 +135,8 @@ async function start() {
     answer.value = pc.localDescription.sdp; // update ICE candidates
     if(e.candidate){ receiverCandidates.value += e.candidate.candidate + '\n'; }
   });
-  pc.addEventListener('iceconnectionstatechange', function(e){
-    console.log('ICE state:', pc.iceConnectionState);
-  });
+  pc.addEventListener('iceconnectionstatechange', function(e){ updateState(conist); });
+  pc.addEventListener('connectionstatechange', function(e){ updateState(connst); });
   pc.addEventListener('track', function(e){
     if (remoteVideo.srcObject !== e.streams[0]) {
       remoteVideo.srcObject = e.streams[0];
@@ -161,8 +174,8 @@ async function start() {
 
 function hangup() {
   console.log('End call');
-  pc.close();
-  pc = null;
+  pc.close(); // the "closed" state is not fired!
+  updateState(signst); updateState(conist); updateState(connst); // so we must update states manually
   hangupButton.disabled = true;
   startButton.disabled = false;
   offer.value = '';

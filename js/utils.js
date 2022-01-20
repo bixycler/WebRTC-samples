@@ -35,10 +35,10 @@ async function copyToClipboard(txt, deflate=false) {
   await navigator.clipboard.writeText(txtval);
   let diff = await diffClipboard(txtval);
   if(diff){
-    handleError(`copyToClipboard(${txt.id}):`, `Mismatch result: clipboard[${diff.di}..] = "${diff.ds1}" <> "${diff.ds2}"`);
+    handleError(`copyToClipboard(${txt.id}${deflate?', deflate':''}):`, `Mismatch result: clipboard[${diff.di}..] = "${diff.ds1}" <> "${diff.ds2}"`);
     return false;
   }
-  console.log(`copyToClipboard(${txt.id}): done.`);
+  console.log(`copyToClipboard(${txt.id}): done${deflate?' (deflated)':''}.`);
   return true;
 }
 

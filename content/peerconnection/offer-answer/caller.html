@@ -35,22 +35,27 @@
     <p>Click "Start" to get user media and to create Offer SDP; then do signaling (exchange SDPs with the receiver); then click "Call" to call the remote peer (receiver); finally click "Hang Up" to end the call.
     </p>
     
+    <u>Signaling state:</u> <span id="signaling-state" class="text-state"></span> <br/>
+    <u>ICE Candidate state:</u> <span id="candidate-state" class="text-state"></span> <br/>
+    <u>ICE Connection state:</u> <span id="iconnection-state" class="text-state"></span> <br/>
+    <u>Connection state:</u> <span id="connection-state" class="text-state"></span> <br/>
+
     <span id="error-message" class="text-error"></span>
 
-    <h4>Offer SDP (to the receiver)</h4>
-    <label for="offer-deflated" class="status-button"><input id="offer-deflated" type="checkbox" value="offer-deflated" checked="checked">Deflated</label>
+    <h4>Offer SDP (to the receiver):</h4>
+    <label for="offer-deflated" class="status-button" title="Copy the compressed text"><input id="offer-deflated" type="checkbox" value="offer-deflated" checked="checked">Deflated</label>
     <input id="offer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
     <textarea id="offer" class="text-SDP" placeholder="Click Start to generate Offer SDP for the receiver ..."></textarea>
 
-    <h4>Answer SDP (from the receiver)</h4>
-    <label for="answer-deflated" class="status-button"><input id="answer-deflated" type="checkbox" value="answer-deflated" checked="checked">Deflated</label>
+    <h4>Answer SDP (from the receiver):</h4>
+    <label for="answer-deflated" class="status-button" title="Paste the compressed text"><input id="answer-deflated" type="checkbox" value="answer-deflated" checked="checked">Deflated</label>
     <input id="answer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
     <textarea id="answer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
 
-    <h4>Caller ICE Candidates</h4>
+    <h4>Caller ICE Candidates:</h4>
     <textarea id="caller-candidates" class="text-candidates"></textarea>
 
-    <h4>Receiver ICE Candidates</h4>
+    <h4>Receiver ICE Candidates:</h4>
     <textarea id="receiver-candidates" class="text-candidates"></textarea>
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>

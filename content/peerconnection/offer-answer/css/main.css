@@ -2,7 +2,6 @@ button {
   margin: 0 20px 0 0;
   width: 83px;
 }
-
 button#hangupButton {
     margin: 0;
 }
@@ -29,31 +28,65 @@ select#peer-roles {
   color: red;
 }
 
+.deleted {
+  text-decoration: line-through;
+}
+
+.nominated {
+  font-weight: bold;
+}
+
+.selected {
+  font-style: italic;
+}
+
 textarea.text-SDP {
   width: 100%;
   height: 300px;
   resize: both;
 }
-
 textarea.text-candidates {
   width: 100%;
   height: 100px;
 }
 
 video {
-  --width: 45%;
+  --width: 100%;
   width: var(--width);
   height: calc(var(--width) * 0.75);
-  margin: 0 0 20px 0;
+  margin: 0 0 0 0;
   vertical-align: top;
-}
-
-video#localVideo {
-  margin: 0 20px 20px 0;
 }
 
 div.box {
   margin: 1em;
+}
+
+table.peer-columns{
+  width: 100%;
+  border-spacing: 10px;
+}
+table.peer-columns td{
+  width: 50%;
+}
+
+table.candidate-pair-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+table.candidate-pair-table td{
+  border-width: 1px 0;
+  border-style: solid;
+  padding: 3px 0;
+}
+table.candidate-pair-table .left{
+  text-align: left;
+}
+table.candidate-pair-table .center{
+  text-align: center;
+}
+table.candidate-pair-table .right{
+  text-align: right;
 }
 
 @media screen and (max-width: 400px) {
@@ -64,7 +97,7 @@ div.box {
 
   video {
     height: 90px;
-    margin: 0 0 10px 0;
+    margin: 0 0 0 0;
     width: calc(50% - 7px);
   }
   video#localVideo {

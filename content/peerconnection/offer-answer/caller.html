@@ -16,6 +16,7 @@
     <title>Peer connection - Caller</title>
 
     <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="../../../css/main.css"/>
     <link rel="stylesheet" href="css/main.css"/>
 
@@ -23,40 +24,59 @@
 
 <body>
 
-    <video id="localVideo" title="Local video" playsinline autoplay muted></video>
-    <video id="remoteVideo" title="Remote video" playsinline autoplay></video>
+  <table class="peer-columns">
+  <tr><th><i>*Local video (caller)</i></th><th>Remote video (receiver)</th></tr><tr><td>
+    <video id="localVideo" playsinline autoplay muted></video>
+  </td><td>
+    <video id="remoteVideo" playsinline autoplay></video>
+  </td></tr></table>
 
-    <div class="box">
-        <button id="startButton">Start</button>
-        <button id="callButton">Call</button>
-        <button id="hangupButton">Hang Up</button>
-    </div>
+  <div class="box">
+    <button id="startButton">Start</button>
+    <button id="callButton">Call</button>
+    <button id="hangupButton">Hang Up</button>
+  </div>
 
-    <p>Click "Start" to get user media and to create Offer SDP; then do signaling (exchange SDPs with the receiver); then click "Call" to call the remote peer (receiver); finally click "Hang Up" to end the call.
-    </p>
-    
-    <u>Signaling state:</u> <span id="signaling-state" class="text-state"></span> <br/>
-    <u>ICE Candidate state:</u> <span id="candidate-state" class="text-state"></span> <br/>
-    <u>ICE Connection state:</u> <span id="iconnection-state" class="text-state"></span> <br/>
-    <u>Connection state:</u> <span id="connection-state" class="text-state"></span> <br/>
+  <p>Click "Start" to get user media and to create Offer SDP; then do signaling (exchange SDPs with the receiver); then click "Call" to call the remote peer (receiver); finally click "Hang Up" to end the call.
+  </p>
+  
+  <u>Signaling state:</u> <span id="signaling-state" class="text-state"></span> <br/>
+  <u>ICE Candidate state:</u> <span id="candidate-state" class="text-state"></span> <br/>
+  <u>ICE Connection state:</u> <span id="iconnection-state" class="text-state"></span> <br/>
+  <u>Connection state:</u> <span id="connection-state" class="text-state"></span> <br/>
+  <u>ICE Candidate Pair:</u> <span id="candidate-pair-state" class="text-state"></span> 
+    <table id="candidate-pair-table" class="candidate-pair-table">
+      <!--tr>
+        <td id="RTCIceCandidate_h+d/JF2Q" class="text-address left">UDP host 10.134.1.113:55069</td> 
+        <td class="center">[<i>*local</i>] &lt;= <span id="RTCIceCandidatePair_h+d/JF2Q_tGXqGul/" class="text-state">1 (waiting) 0</span> =&gt;&gt; [remote]</td>
+        <td id="RTCIceCandidate_tGXqGul/" class="text-address right">UDP prflx :55075</td> 
+      </tr-->
+    </table>
+  <br/>
 
+  <div id="error-message-div" hidden="hidden">ERROR: 
+    <input type="button" id="error-message-clear" class="status-button" value="Clear"></input>
+    <input type="button" id="error-message-copy" class="status-button" value="Copy"></input>
     <span id="error-message" class="text-error"></span>
+  </div>
 
+  <table class="peer-columns"><tr><td>
     <h4>Offer SDP (to the receiver):</h4>
     <label for="offer-deflated" class="status-button" title="Copy the compressed text"><input id="offer-deflated" type="checkbox" value="offer-deflated" checked="checked">Deflated</label>
     <input id="offer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
     <textarea id="offer" class="text-SDP" placeholder="Click Start to generate Offer SDP for the receiver ..."></textarea>
-
+  </td><td>
     <h4>Answer SDP (from the receiver):</h4>
     <label for="answer-deflated" class="status-button" title="Paste the compressed text"><input id="answer-deflated" type="checkbox" value="answer-deflated" checked="checked">Deflated</label>
     <input id="answer-status" type="button" value="Waiting for Start ..." disabled="disabled"  class="bold-when-diabled status-button">
     <textarea id="answer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
+  </td></tr></table>
 
-    <h4>Caller ICE Candidates:</h4>
-    <textarea id="caller-candidates" class="text-candidates"></textarea>
+  <h4>Caller's ICE Candidates:</h4>
+  <textarea id="caller-candidates" class="text-candidates"></textarea>
 
-    <h4>Receiver ICE Candidates:</h4>
-    <textarea id="receiver-candidates" class="text-candidates"></textarea>
+  <h4>Receiver's ICE Candidates:</h4>
+  <textarea id="receiver-candidates" class="text-candidates"></textarea>
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script src="../../../js/utils.js" async></script>

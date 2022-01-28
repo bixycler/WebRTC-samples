@@ -2,16 +2,23 @@
 
 //require '../../../../js/utils.js';
 
-var localStream = null;
-var pc = null, dtls = null, ice = null;
-const ICE_config = {
+var localStream = null; // the media stream on this peer
+var pc = null, dtls = null, ice = null; // the peer connection with its transports
+var dc = {local:null, remote:null, connected:false}; // the data channels of pc
+const pc_config = {
   'iceServers': [
     {
       'url': 'stun:stun.l.google.com:19302'
     }
   ],
-  'bundlePolicy': 'max-bundle' //ensure that there's only 1 transport (for each layer: DTLS and ICE)
+  'bundlePolicy': 'max-bundle' // ensure that there's only 1 transport (for each layer: DTLS and ICE)
 };
+const dc_config = {
+  ordered: true, // [default] guarantee in-order delivery of messages
+  negotiated: false, // [default] let WebRTC automatically negotiate using its DTLS
+};
+
+//////////////////////// DOM elements & Data \\\\\\\\\\\\\\\\\\\\\\\\
 
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
@@ -22,7 +29,7 @@ hangupButton.addEventListener('click', hangup);
 
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
-let started = false;
+var started = false;
 localVideo.addEventListener('loadedmetadata', function() {
   console.log(`Local video videoWidth: ${this.videoWidth}px,  videoHeight: ${this.videoHeight}px`);
 });
@@ -36,6 +43,13 @@ remoteVideo.addEventListener('resize', function() {
   }
   console.log(`Remote video size changed to ${remoteVideo.videoWidth}x${remoteVideo.videoHeight}`);
 });
+const localMessage = document.getElementById('local-message');
+const remoteMessage = document.getElementById('remote-message');
+const localMessageLog = document.getElementById('local-message-log');
+const remoteMessageLog = document.getElementById('remote-message-log');
+localMessage.addEventListener('change', sendMessage);
+localMessageLog.addEventListener('change', (e)=>{ updateHeight(e.target, 100); });
+remoteMessageLog.addEventListener('change', (e)=>{ updateHeight(e.target, 100); });
 
 const signalingState = document.getElementById('signaling-state');
 const signst = {state:'signalingState', dome:signalingState, caption:'Signaling state',
@@ -59,73 +73,8 @@ const candPairState = document.getElementById('candidate-pair-state');
 const candPairTable = document.getElementById('candidate-pair-table');
 const candpcmap = {'':'black', 'succeeded':'blue', 'frozen':'orange', 'failed':'red'};
 var candPairs = {}, candAddrs = {}; // pairId->[candPairs]->pairNode, address->[candAddrs]->candId
+var selectedPairDsc = '', obsoletePairDsc = '';
 var statsUpdater = null;
-function candstr(cand, useFoundation=false){
-  let protocol = 'protocol' in cand? cand.protocol.toUpperCase(): '';
-  let type = 'candidateType' in cand? cand.candidateType: 'type' in cand? cand.type: '';
-  let address = useFoundation? ('foundation' in cand? cand.foundation: ''): 
-    (type!='prflx' && 'address' in cand)? cand.address: ''; // peer-reflexive (prflx) IP is redacted anyway!
-  let port = 'port' in cand? cand.port: '';
-  return `${protocol} ${type} ${address}:${port}`;
-}
-async function parseStats(){
-  let stats = await pc.getStats();
-  //console.log('pc stats: ', stats); // out-of-date stats???
-  //stats.forEach(r=>{if(r.type in {'candidate-pair':0, 'local-candidate':1, 'remote-candidate':1}) console.log(r);});
-  let pairst = '', paired = {};
-  stats.forEach(report=>{
-    if(report.type=='candidate-pair'){
-      let pairNode = document.getElementById(report.id);
-      if(!pairNode){ // prepend this new pair
-        console.log(report);
-        candPairTable.insertAdjacentHTML('afterbegin', `<tr>
-          <td name="${report.remoteCandidateId}" class="text-address left"></td> 
-          <td class="center">[remote] &lt;&lt;= <span id="${report.id}" class="text-state">...</span> =&gt; [<i>*local</i>]</td>
-          <td name="${report.localCandidateId}" class="text-address right"></td> 
-        </tr>`);
-        pairNode = document.getElementById(report.id);
-        candPairs[report.id] = pairNode;
-      }
-      let color = report.state in candpcmap? candpcmap[report.state]: candpcmap[''];
-      pairNode.innerHTML = `${report.packetsSent} (<span style="color:${color}">${report.state}</span>) ${report.packetsReceived}`;
-      pairst += ' '+report.state; paired[report.id] = true;
-      if(report.nominated){ pairNode.classList.add('nominated'); }else{ pairNode.classList.remove('nominated'); }
-    }else if(report.type in {'local-candidate':1, 'remote-candidate':1}){
-      //console.log(report);
-      let candNodes = document.getElementsByName(report.id);
-      let candidate = candstr(report), peer = report.type.split('-')[0];
-      if(!candNodes){ console.log('Unpaired candidate: ', report); }
-      else{
-        candNodes.forEach(node=>{node.innerHTML = candidate});
-      }
-      candidate = `${peer}:${candidate}`;
-      if(!(candidate in candAddrs)){ candAddrs[candidate] = report.id.substring('RTCIceCandidate_'.length); }
-    }
-  });
-  for(let id in candPairs){ if(!paired[id]){ candPairs[id].classList.add('deleted'); }else{ candPairs[id].classList.remove('deleted'); }};
-  candPairState.innerHTML = pairst? pairst: '(none)';
-
-  updateSelectedPair();
-}
-var selectedPairDsc = '';
-async function updateSelectedPair(){
-  if(!ice){ return; }
-  let pair = ice.getSelectedCandidatePair();
-  if(!pair){ return; }
-  let local = 'local:'+candstr(pair.local);
-  let remote = 'remote:'+candstr(pair.remote);
-  let dsc = local+' <=> '+remote;
-  if(selectedPairDsc==dsc){ return; }
-  console.log('Selected candidate pair: ', dsc, pair);
-  //parseStats();
-  if(!(local in candAddrs && remote in candAddrs)){ return; }
-  selectedPairDsc = dsc; // only update selectedPairDsc if everything's alright
-  let pairid = `RTCIceCandidatePair_${candAddrs[local]}_${candAddrs[remote]}`;
-  console.log('Selected candidate pair id = ', pairid);
-  for(let id in candPairs){
-    if(id==pairid){ candPairs[id].classList.add('selected'); }else{ candPairs[id].classList.remove('selected'); }
-  }
-}
 
 const errmsg = document.getElementById('error-message');
 const errmsgDiv = document.getElementById('error-message-div');
@@ -171,45 +120,28 @@ offer.addEventListener('input', ()=>{
 });
 
 
+//////////////////////// Action functions \\\\\\\\\\\\\\\\\\\\\\\\
+
 async function start() {
   startButton.disabled = true;
 
-  // Start UserMedia
-  if (!localStream) {
-    console.log('Requesting local stream (user media)');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
-      console.log('Received local stream:');
-      localVideo.srcObject = stream;
-      localStream = stream;
-    } catch (e) {
-      handleError('getUserMedia():', e);
-      return;
-    }
-  }
-  const videoTracks = localStream.getVideoTracks();
-  const audioTracks = localStream.getAudioTracks();
-  if (videoTracks.length > 0) {
-    console.log(`- Video device: ${videoTracks[0].label}`);
-  }
-  if (audioTracks.length > 0) {
-    console.log(`- Audio device: ${audioTracks[0].label}`);
-  }
+  // 0. Start UserMedia
+  await startLocalStream();
 
-  // Start PeerConnection
-  pc = new RTCPeerConnection(ICE_config);
-  console.log('Created peer connection object pc with ICE_config = ', ICE_config);
-  updateState(signst); updateState(candst); updateState(conist); updateState(connst); parseStats();
+  // 1. Start PeerConnection
+  pc = new RTCPeerConnection(pc_config);
+  console.log('Created peer connection object pc with pc_config = ', pc_config);
+  updateState(signst); updateState(candst); updateState(conist); updateState(connst); updateStats();
   pc.addEventListener('negotiationneeded', async function(e){
     console.log('Starting SDP negotiation'); // NEVER on a receiver!!!
   });
   pc.addEventListener('signalingstatechange', function(e){ updateState(signst); });
   pc.addEventListener('icegatheringstatechange', function(e){
     answerStatus.value = `ICE candidate ${pc.iceGatheringState}`;
-    dtls = pc.getSenders()[0].transport; // due to bundlePolicy=='max-bundle', there's only 1 transport
+    dtls = pc.sctp? pc.sctp.transport: pc.getSenders()[0].transport; // due to bundlePolicy=='max-bundle', there's only 1 transport for all: pc.sctp (data channel), senders & receivers of all tracks
     if(!ice){
       ice = dtls.iceTransport;
-      ice.addEventListener('selectedcandidatepairchange', async e => parseStats()); // sometimes the "selected pair" is out-of-date (e.g. stuck at 'prflx' candidate)
+      ice.addEventListener('selectedcandidatepairchange', async e => updateStats());
     }
     let ncands = '';
     if(pc.iceGatheringState=='complete'){
@@ -227,11 +159,11 @@ async function start() {
   });
   pc.addEventListener('iceconnectionstatechange', async function(e){
     updateState(conist);
-    parseStats();
+    updateStats();
   });
   pc.addEventListener('connectionstatechange', async function(e){
     updateState(connst);
-    parseStats();
+    updateStats();
   });
   pc.addEventListener('track', function(e){
     if (remoteVideo.srcObject !== e.streams[0]) {
@@ -239,8 +171,45 @@ async function start() {
       console.log('pc received remote stream');
     }
   });
+  // Update pc's stats periodically. Required, because both pc's stats and selected candidate pair are not up-to-date at pc & ice events
   if(statsUpdater){ clearInterval(statsUpdater); }
-  statsUpdater = setInterval(parseStats, 1000); // update the state of pc every second
+  statsUpdater = setInterval(updateStats, 1000); // update every second
+
+  // 1.1. Start DataChannel
+  dc.local = pc.createDataChannel('text-messaging', dc_config);
+  console.log('Created data channel dc.local with dc_config = ', dc_config);
+  updateState(signst); updateState(candst); updateState(conist); updateState(connst); updateStats();
+  dc.local.binaryType = 'arraybuffer';
+  dc.local.addEventListener('open', (e) => {
+    console.log('Local channel opened.');
+    dc.connected = true;
+  });
+  dc.local.addEventListener('close', (e) => {
+    console.log('Local channel closed.');
+    dc.connected = false;
+  });
+  dc.local.addEventListener('message', (e) => { // NEVER on a local channel!
+    console.log('Local message received... back?!:', e.data);
+  });
+  pc.addEventListener('datachannel', (e) => {
+    console.log('Remote channel received:', e.channel);
+    dc.remote = e.channel;
+    dc.remote.addEventListener('open', (e) => {
+      console.log('Remote channel opened.');
+      dc.connected = true;
+    });
+    dc.remote.addEventListener('close', (e) => {
+      console.log('Remote channel closed.');
+      dc.connected = false;
+    });
+    dc.remote.addEventListener('message', (e) => {
+      let msg = e.data;
+      console.log('Remote message received:', msg);
+      remoteMessage.value = msg; remoteMessageLog.value += msg+'\n';
+    });
+  });
+
+  // 2. Set RemoteDescription
   console.log('pc.setRemoteDescription() start');
   try {
     await pc.setRemoteDescription({type: 'offer', sdp: offer.value});
@@ -251,10 +220,14 @@ async function start() {
     return;
   }
 
-  //localStream.getTracks().forEach(track => pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]}));
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); // REUSE transceivers created by pc.setRemoteDescription() [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
-  console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
+  // 3. Add Tracks
+  if (localStream) {
+    //localStream.getTracks().forEach(track => pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]}));
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); // REUSE transceivers created by pc.setRemoteDescription() [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
+    console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
+  }
 
+  // 4. Set LocalDescription
   console.log('pc.setLocalDescription() start');
   try {
     await pc.setLocalDescription();
@@ -271,10 +244,18 @@ async function start() {
 }
 
 
+function sendMessage(e){
+  if(!dc.local || dc.local.readyState!='open'){return;}
+  let msg = localMessage.value;
+  dc.local.send(msg);
+  console.log('Send message:', msg);
+  localMessageLog.value += msg+'\n'; localMessage.value = '';
+}
+
 async function hangup() {
   console.log('End call');
   pc.close(); // the "closed" state will not be fired!
-  updateState(signst); updateState(conist); updateState(connst); parseStats(); // so we must update states manually
+  updateState(signst); updateState(conist); updateState(connst); updateStats(); // so we must update states manually
   pc = dtls = ice = null;
   hangupButton.disabled = true;
   startButton.disabled = false;
@@ -284,4 +265,96 @@ async function hangup() {
   answerStatus.disabled = true;
   callerCandidates.value = '';
   receiverCandidates.value = '';
+}
+
+
+//////////////////////// Helper functions \\\\\\\\\\\\\\\\\\\\\\\\
+
+async function startLocalStream(){
+  if (!localStream) {
+    let stream = await getLocalStream();
+    if (stream) {
+      console.log('Received local stream:');
+      localVideo.srcObject = localStream = stream;
+    }
+  }
+  if (localStream) {
+    const videoTracks = localStream.getVideoTracks();
+    const audioTracks = localStream.getAudioTracks();
+    if (videoTracks && videoTracks.length > 0) {
+      console.log(`- Video device: ${videoTracks[0].label}`);
+    }
+    if (audioTracks && audioTracks.length > 0) {
+      console.log(`- Audio device: ${audioTracks[0].label}`);
+    }
+  }
+}
+
+async function updateStats(){
+  if(!pc){return;}
+  let stats = await pc.getStats();
+  //console.log('pc stats: ', stats); // out-of-date stats???
+  //stats.forEach(r=>{if(r.type in {'candidate-pair':0, 'local-candidate':1, 'remote-candidate':1}) console.log(r);});
+  let pairst = '', paired = {};
+  stats.forEach(report=>{
+    if(report.type=='candidate-pair'){
+      let pairNode = document.getElementById(report.id);
+      if(!pairNode){ // prepend this new pair
+        console.log(report);
+        candPairTable.tBodies[0].insertAdjacentHTML('afterbegin', `<tr id="TR_${report.id}">
+          <td name="${report.remoteCandidateId}" class="text-address left"></td> 
+          <td class="center">[remote] &lt;&lt;= <span id="${report.id}" class="text-state">...</span> =&gt; [<i>*local</i>]</td>
+          <td name="${report.localCandidateId}" class="text-address right"></td> 
+        </tr>`);
+        pairNode = document.getElementById(report.id);
+        candPairs[report.id] = pairNode;
+      }
+      let color = report.state in candpcmap? candpcmap[report.state]: candpcmap[''];
+      pairNode.innerHTML = `${report.packetsSent} (<span style="color:${color}">${report.state}</span>) ${report.packetsReceived}`;
+      pairst += (pairst? ', ':'')+report.state; paired[report.id] = true;
+      let pairRow = document.getElementById(`TR_${report.id}`);
+      if(report.nominated){ pairRow.classList.add('nominated'); }else{ pairRow.classList.remove('nominated'); }
+    }else if(report.type in {'local-candidate':1, 'remote-candidate':1}){
+      //console.log(report);
+      let candNodes = document.getElementsByName(report.id);
+      let candidate = candstr(report), peer = report.type.split('-')[0];
+      if(!candNodes){ console.log('Unpaired candidate: ', report); }
+      else{
+        candNodes.forEach(node=>{node.innerHTML = candidate});
+      }
+      candidate = `${peer}:${candidate}`;
+      if(!(candidate in candAddrs)){ candAddrs[candidate] = report.id.substring('RTCIceCandidate_'.length); }
+    }
+  });
+  for(let id in candPairs){ if(!paired[id]){ candPairs[id].classList.add('deleted'); }else{ candPairs[id].classList.remove('deleted'); }};
+  candPairState.innerHTML = pairst? pairst: '(none)';
+
+  updateSelectedPair();
+}
+
+async function updateSelectedPair(){
+  if(!ice){ return; }
+  let pair = ice.getSelectedCandidatePair();
+  if(!pair){ return; }
+  let local = 'local:'+candstr(pair.local);
+  let remote = 'remote:'+candstr(pair.remote);
+  let dsc = local+' <=> '+remote;
+  if(selectedPairDsc!=dsc){ console.log('Selected candidate pair: ', dsc, pair); }
+  //updateStats(); // if updateSelectedPair() is not embedded in updateStats()
+  if(!(local in candAddrs && remote in candAddrs)){ return; }
+  let pairid = `RTCIceCandidatePair_${candAddrs[local]}_${candAddrs[remote]}`;
+  if(selectedPairDsc!=dsc){// new selected pair
+    console.log('Selected candidate pair id = ', pairid);
+    for(let id in candPairs){
+      let pairRow = document.getElementById(`TR_${id}`);
+      if(id==pairid){ pairRow.classList.add('selected'); }else{ pairRow.classList.remove('selected'); }
+    }
+    selectedPairDsc = dsc; // only update selectedPairDsc if everything's alright
+  }else if(obsoletePairDsc!=dsc){// sometimes the "selected pair" is stuck at 'prflx' candidate ==> obsolete it!
+    if(candPairs[pairid].classList.contains('deleted')){
+      let pairRow = document.getElementById(`TR_${pairid}`);
+      pairRow.classList.remove('selected'); pairRow.classList.add('obsolete');
+      obsoletePairDsc = dsc;
+    }
+  }
 }

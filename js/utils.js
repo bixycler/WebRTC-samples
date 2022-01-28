@@ -1,4 +1,25 @@
 
+async function getLocalStream(){
+  let stream = null;
+  console.log('Requesting local stream (user media or screen capture) ...');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+  } catch (e) {
+    if(e.name=='NotFoundError' || e.name=='NotReadableError'){
+      try {
+        stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: true});
+      } catch (e) {
+        handleError('getDisplayMedia():', e);
+        return null;
+      }
+    }else{
+      handleError('getUserMedia():', e);
+      return null;
+    }
+  }
+  return stream;
+}
+
 function strDiff(str1, str2){
   // normalize strings
   if(!str1){ str1 = ''; }
@@ -75,6 +96,7 @@ DOMValueDsc.set = function(val){
   DOMValueSet.apply(this, [val]);
   //console.log(`${this.id}.set:`,{val});
   this.dispatchEvent(new Event('input'));
+  this.dispatchEvent(new Event('change'));
 }
 Object.defineProperty(HTMLTextAreaElement.prototype, 'value', DOMValueDsc);
 /* Nope!!!
@@ -86,6 +108,24 @@ Element.prototype.setAttribute = function(attr,val){
   this.dispatchEvent(new Event('input'));
 }
 */
+
+
+function candstr(cand, useFoundation=false){
+  let protocol = 'protocol' in cand? cand.protocol.toUpperCase(): '';
+  let type = 'candidateType' in cand? cand.candidateType: 'type' in cand? cand.type: '';
+  let address = useFoundation? ('foundation' in cand? cand.foundation: ''): 
+    (type!='prflx' && 'address' in cand)? cand.address: ''; // peer-reflexive (prflx) IP is redacted anyway!
+  let port = 'port' in cand? cand.port: '';
+  return `${protocol} ${type} ${address}:${port}`;
+}
+
+function updateHeight(dom, max){
+  dom.style.height = 0; // shrink (reset)
+  let h = dom.scrollHeight;
+  if(h > max){ h = max; }
+  dom.style.height = h + "px"; // expand
+  dom.scrollTop = dom.scrollHeight; // scroll to bottom
+}
 
 async function deflateStr(s, base64 = false, format = 'gzip'){
   const ss = new Blob([s]).stream().pipeThrough(new CompressionStream(format)); //stream of deflated string

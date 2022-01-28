@@ -37,7 +37,11 @@ select#peer-roles {
 }
 
 .selected {
-  font-style: italic;
+  background: skyblue;
+}
+
+.obsolete {
+  background: lightgray;
 }
 
 textarea.text-SDP {
@@ -48,6 +52,15 @@ textarea.text-SDP {
 textarea.text-candidates {
   width: 100%;
   height: 100px;
+}
+textarea.text-log {
+  width: 100%;
+  height: 20px;
+  resize: vertical;
+}
+
+input.text-line {
+  width: 100%;
 }
 
 video {
@@ -64,7 +77,7 @@ div.box {
 
 table.peer-columns{
   width: 100%;
-  border-spacing: 10px;
+  border-spacing: 10px 3px;
 }
 table.peer-columns td{
   width: 50%;

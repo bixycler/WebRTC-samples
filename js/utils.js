@@ -1,3 +1,20 @@
+var stdRSACertificate = {
+  name: "RSASSA-PKCS1-v1_5",
+  modulusLength: 2048,
+  publicExponent: new Uint8Array([1, 0, 1]),
+  hash: "SHA-256"
+};
+
+String.prototype.hashCode = function(hex=false) {
+  let hash = 0;
+  for (let i = 0; i < this.length; i++) {
+    //hash  = 31*hash + this.charCodeAt(i);
+    hash  = Math.imul(31, hash) + this.charCodeAt(i);
+  }
+  hash = hash>>>0; // Convert to unsigned (32-bit) integer
+  if(hex){ hash = hash.toString(16); }
+  return hash;
+};
 
 async function getLocalStream(){
   let stream = null;

@@ -25,7 +25,8 @@
 <body>
 
   <table class="peer-columns">
-  <thead><tr><th>Remote peer (caller)</th><th><i>*Local peer (receiver)</i></th></tr></thead>
+  <thead><tr><th>Remote peer (caller)[#<span id="remote-hash-id" title="Hash id">...</span>]</th>
+    <th><i>*Local peer (receiver)[#<span id="local-hash-id" title="Hash id">...</span>]</i></th></tr></thead>
   <tbody><tr>
     <td><video id="remoteVideo" playsinline autoplay controls></video></td>
     <td><video id="localVideo" playsinline autoplay controls muted></video></td>
@@ -72,7 +73,7 @@
     <h4>Offer SDP (from the caller):</h4>
     <label for="offer-deflated" class="status-button" title="Copy the compressed text"><input id="offer-deflated" type="checkbox" value="offer-deflated" checked="checked"/>Deflated</label>
     <input id="offer-status" type="button" value="Paste Offer" class="bold-when-diabled status-button"/>
-    <textarea id="offer" class="text-SDP" placeholder="Paste the Answer SDP from the receiver here ..."></textarea>
+    <textarea id="offer" class="text-SDP" placeholder="Paste the Offer SDP from the caller here ..."></textarea>
   </td><td>
     <h4>Answer SDP (to the caller):</h4>
     <label for="answer-deflated" class="status-button" title="Copy the compressed text"><input id="answer-deflated" type="checkbox" value="answer-deflated" checked="checked"/>Deflated</label>

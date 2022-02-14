@@ -5,13 +5,15 @@
 var localStream = null; // the media stream on this peer
 var pc = null, dtls = null, ice = null; // the peer connection with its transports
 var dc = {local:null, remote:null, connected:false}; // the data channels of pc
+var id = null; // the certificate of the identity of this peer
 const pc_config = {
   'iceServers': [
     {
       'url': 'stun:stun.l.google.com:19302'
     }
   ],
-  'bundlePolicy': 'max-bundle' // ensure that there's only 1 transport (for each layer: DTLS and ICE)
+  'bundlePolicy': 'max-bundle', // ensure that there's only 1 transport (for each layer: DTLS and ICE)
+  'certificates': [/*id*/], // fix the id of this peer, to avoid regenerating new keys in subsequent calls
 };
 const dc_config = {
   ordered: true, // [default] guarantee in-order delivery of messages
@@ -27,6 +29,8 @@ hangupButton.disabled = true;
 startButton.addEventListener('click', start);
 hangupButton.addEventListener('click', hangup);
 
+const localHashId = document.getElementById('local-hash-id');
+const remoteHashId = document.getElementById('remote-hash-id');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 var started = false;
@@ -117,6 +121,11 @@ offer.addEventListener('input', ()=>{
   let candidates = offer.value.match(/a=candidate:[^\r\n]*/g);
   candidates = candidates? candidates.map(m => m.substring('a='.length)): [];
   callerCandidates.value = candidates.join('\n');
+  let fingerprint = offer.value.match(/a=fingerprint:[^\r\n]*/g);
+  fingerprint = fingerprint? fingerprint[0].substring('a=fingerprint:'.length): '';
+  console.log(`Remote peer's fingerprint: ${fingerprint}`);
+  remoteHashId.innerText = fingerprint.hashCode(true);
+  remoteHashId.title = 'Fingerprint:'+fingerprint;
 });
 
 
@@ -124,6 +133,14 @@ offer.addEventListener('input', ()=>{
 
 async function start() {
   startButton.disabled = true;
+  if(!id){ 
+    id = await RTCPeerConnection.generateCertificate(stdRSACertificate);
+    pc_config.certificates = [id];
+    let fp = id.getFingerprints()[0], fpv = fp.algorithm+' '+fp.value.toUpperCase();
+    console.log(`Id (fingerprint) of this peer: ${fpv}`);
+    localHashId.innerText = fpv.hashCode(true);
+    localHashId.title = 'Fingerprint:'+fpv;
+  }
 
   // 0. Start UserMedia
   await startLocalStream();

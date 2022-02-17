@@ -9,7 +9,7 @@ var id = null; // the certificate of the identity of this peer
 const pc_config = {
   'iceServers': [
     {
-      'url': 'stun:stun.l.google.com:19302'
+      'urls': 'stun:stun.l.google.com:19302'
     }
   ],
   'bundlePolicy': 'max-bundle', // ensure that there's only 1 transport (for each layer: DTLS and ICE)

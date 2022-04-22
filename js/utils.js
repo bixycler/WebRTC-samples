@@ -16,13 +16,14 @@ String.prototype.hashCode = function(hex=false) {
   return hash;
 };
 
-async function getLocalStream(){
+async function getLocalStream(fallBackOnNotAllowed=true){
   let stream = null;
   console.log('Requesting local stream (user media or screen capture) ...');
   try {
     stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
   } catch (e) {
-    if(e.name=='NotFoundError' || e.name=='NotReadableError'){
+    if(e.name=='NotFoundError' || e.name=='NotReadableError'
+      || (fallBackOnNotAllowed && e.name=='NotAllowedError')){
       try {
         stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: true});
       } catch (e) {

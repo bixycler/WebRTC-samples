@@ -13,20 +13,27 @@
 
     <base target="_blank">
 
-    <title>Peer connection - Caller</title>
+    <title>Peer connection - Receiver</title>
 
     <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
     <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="../../../css/main.css"/>
     <link rel="stylesheet" href="css/main.css"/>
 
+    <style id="local-stylesheet">
+      .deleted {
+        text-decoration: line-through;
+        display: none;
+      }
+    </style>
+
 </head>
 
 <body>
 
   <table class="peer-columns">
-  <thead><tr><th>Remote peer (caller)[#<span id="remote-hash-id" title="Hash id">...</span>]</th>
-    <th><i>*Local peer (receiver)[#<span id="local-hash-id" title="Hash id">...</span>]</i></th></tr></thead>
+  <thead><tr><th>Remote peer (caller)[#<span id="remote-hash-id" title="Hash id">...</span>][<span id="recv-vidres" title="Received video resolution">WxH</span>]</th>
+    <th><i>*Local peer (receiver)[#<span id="local-hash-id" title="Hash id">...</span>][<span id="source-vidres" title="Source video resolution">WxH</span>-&gt;<span id="sent-vidres" title="Sent video resolution">WxH</span>]</i></th></tr></thead>
   <tbody><tr>
     <td><video id="remoteVideo" playsinline autoplay controls></video></td>
     <td><video id="localVideo" playsinline autoplay controls muted></video></td>
@@ -44,10 +51,11 @@
   </p>
   
   <u>Signaling state:</u> <span id="signaling-state" class="text-state"></span> <br/>
-  <u>ICE Candidate state:</u> <span id="candidate-state" class="text-state"></span> <br/>
+  <u>Peer Connection state:</u> <span id="connection-state" class="text-state"></span> <br/>
   <u>ICE Connection state:</u> <span id="iconnection-state" class="text-state"></span> <br/>
-  <u>Connection state:</u> <span id="connection-state" class="text-state"></span> <br/>
-  <u>ICE Candidate Pairs:</u> <span id="candidate-pair-state" class="text-state"></span> 
+  <u>ICE Candidate state:</u> <span id="candidate-state" class="text-state"></span> <br/>
+  <u>ICE Candidate Pair(s):</u> <span id="candidate-pair-state" class="text-state"></span> 
+    <label for="hide-deleted-entries" class="status-button"><input id="hide-deleted-entries" type="checkbox" value="hide-deleted-entries" checked="checked"/>Hide deleted entries</label>
     <table id="candidate-pair-table" class="candidate-pair-table"><tbody>
       <!--tr id="TR_RTCIceCandidatePair_h+d/JF2Q_tGXqGul/">
         <td id="RTCIceCandidate_h+d/JF2Q" class="text-address left">UDP host 10.134.1.113:55069</td> 
@@ -55,6 +63,21 @@
         <td id="RTCIceCandidate_tGXqGul/" class="text-address right">UDP host 10.134.1.11:55075</td> 
       </tr-->
     </tbody></table>
+  <u>Transport(s):</u> 
+  <table id="transport-table" class="transport-table"><tbody>
+    <tr id="transport_table_header">
+      <th>Id</th> <th>Components</th> <th>DTLS</th> <th>ICE</th> <th>Candidates</th> <th>Gathering</th> <th>Paired</th> 
+    </tr>
+    <!--tr id="transport_1" class="deleted">
+      <td id="transport_1_id" class="text-state" title="transport_1">1</td> 
+      <td id="transport_1_components" class="text-state" title="audio >>&#10;data channel, audio, video">data channel, audio, video</td> 
+      <td id="transport_1_dtls_state" class="text-state" title="new >> new">new</td> 
+      <td id="transport_1_ice_state" class="text-state" title="new >> new">new</td> 
+      <td id="transport_1_candidates" class="text-state" title="prflx&#10;host">2</td> 
+      <td id="transport_1_ice_gathering_state" class="text-state" title="new >> new >> gathering">gathering</td> 
+      <td id="transport_1_paired" class="text-state" title="UDP <=> UDP"><input id="transport_1_paired_check" type="checkbox" checked="checked" disabled="disabled"/></td> 
+    </tr-->
+  </tbody></table>
   <br/>
 
   <div id="error-message-div" hidden="hidden">ERROR: 
@@ -89,6 +112,8 @@
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 <script src="../../../js/utils.js" async></script>
+<script src="../js/utils.js" async></script>
+<script src="js/offer-answer.js" async></script>
 <script src="js/receiver.js" async></script>
 
 </body>

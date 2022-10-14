@@ -1,10 +1,28 @@
-var stdRSACertificate = {
-  name: "RSASSA-PKCS1-v1_5",
-  modulusLength: 2048,
-  publicExponent: new Uint8Array([1, 0, 1]),
-  hash: "SHA-256"
-};
 
+
+
+/////////////////////// JS untils \\\\\\\\\\\\\\\\\\\\\\\
+
+/** Simulate sleep(ms) using setTimeout() */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Auto-init getter of dict[] */
+function idict(dict, key, init){
+  if(!(key in dict)){ dict[key] = init; }
+  return dict[key];
+}
+
+/** Check equality of sets */
+function eqSets(s1, s2){
+  if(s1.size != s2.size){return false}
+  return [...s1].every(ele => s2.has(ele));
+}
+
+/////////////////////// String untils \\\\\\\\\\\\\\\\\\\\\\\
+
+/** Simple hash from string, like in Java */
 String.prototype.hashCode = function(hex=false) {
   let hash = 0;
   for (let i = 0; i < this.length; i++) {
@@ -16,28 +34,24 @@ String.prototype.hashCode = function(hex=false) {
   return hash;
 };
 
-async function getLocalStream(fallBackOnNotAllowed=true){
-  let stream = null;
-  console.log('Requesting local stream (user media or screen capture) ...');
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
-  } catch (e) {
-    if(e.name=='NotFoundError' || e.name=='NotReadableError'
-      || (fallBackOnNotAllowed && e.name=='NotAllowedError')){
-      try {
-        stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: true});
-      } catch (e) {
-        handleError('getDisplayMedia():', e);
-        return null;
-      }
-    }else{
-      handleError('getUserMedia():', e);
-      return null;
-    }
-  }
-  return stream;
+/** Compress the string using compression `format` and optionally convert to `base64` */
+async function deflateStr(s, base64 = false, format = 'gzip'){
+  const ss = new Blob([s]).stream().pipeThrough(new CompressionStream(format)); //stream of deflated string
+  const sb = await new Response(ss).arrayBuffer().then(b => new Uint8Array(b)); //deflated byte array
+  return base64? btoa(String.fromCharCode.apply(null,sb)): sb;
 }
 
+/** Decompress the input `sb` (a base64 string or a byte array) using compression `format` */
+async function inflateStr(sb, format = 'gzip'){
+  if(!(sb instanceof Uint8Array || typeof sb == 'string')){ 
+    throw new TypeError('Parameter sb is not an instance of Uint8Array nor a string.');}
+  if(typeof sb == 'string'){ sb = Uint8Array.from(atob(sb), c => c.charCodeAt(0));}
+  const ss = new Blob([sb]).stream().pipeThrough(new DecompressionStream(format)); //stream of inflated sb
+  const s = await new Response(ss).text(); //inflated string
+  return s;
+}
+
+/** Compute the diff between 2 strings */
 function strDiff(str1, str2){
   // normalize strings
   if(!str1){ str1 = ''; }
@@ -64,11 +78,16 @@ function strDiff(str1, str2){
   }
 }
 
+
+/////////////////////// Clipboard untils \\\\\\\\\\\\\\\\\\\\\\\
+
+/** Compute the diff between current clipboard and the given text */
 async function diffClipboard(str) {
   let s = await navigator.clipboard.readText();
   return strDiff(s, str);
 }
 
+/** Copy the given text `txt.value` into clipboard with optional deflation */
 async function copyToClipboard(txt, deflate=false) {
   let txtval = deflate? await deflateStr(txt.value, base64=true): txt.value;
   await navigator.clipboard.writeText(txtval);
@@ -81,26 +100,46 @@ async function copyToClipboard(txt, deflate=false) {
   return true;
 }
 
+/** Paste the clipboard into `txt.value` optional inflation */
 async function pasteFromClipboard(txt, deflated=false) {
   let txtval = await navigator.clipboard.readText();
   txt.value = deflated? await inflateStr(txtval): txtval;
 }
 
-async function updateTooltip(but, txt, tip, deflated=false){
-  if(but.disabled){ return; }
-  try{
-    let diff = await diffClipboard(deflated? await deflateStr(txt.value, base64=true): txt.value);
-    but.title = diff? 'click me!': tip;
-    //console.log(`updateTooltip(${but.id}): ${but.title}`);
-  }catch(e){
-    if(e instanceof DOMException && e.name=='NotAllowedError'){
-      but.title = 'click me!';
-    }else{ throw e; }
+
+/** Request the media stream with fallback: getUserMedia() > getDisplayMedia() */
+async function getLocalStream(fallBackOnNotAllowed=true){
+  let stream = null;
+  console.log('Requesting local stream (user media or screen capture) ...');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+  } catch (e) {
+    if(e.name=='NotFoundError' || e.name=='NotReadableError'
+      || (fallBackOnNotAllowed && e.name=='NotAllowedError')){
+      try {
+        stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: true});
+      } catch (e) {
+        handleError('getDisplayMedia():', e);
+        return null;
+      }
+    }else{
+      handleError('getUserMedia():', e);
+      return null;
+    }
   }
+  return stream;
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+
+/////////////////////// DOM untils \\\\\\\\\\\\\\\\\\\\\\\
+
+/** Automatically shrink and expand the height of a `dom` to its content, using `dom.scrollHeight` */
+function updateHeight(dom, max){
+  dom.style.height = 0; // shrink (reset)
+  let h = dom.scrollHeight;
+  if(h > max){ h = max; }
+  dom.style.height = h + "px"; // expand
+  dom.scrollTop = dom.scrollHeight; // scroll to bottom
 }
 
 /*** Detect HTMLTextAreaElement.value change:
@@ -126,36 +165,3 @@ Element.prototype.setAttribute = function(attr,val){
   this.dispatchEvent(new Event('input'));
 }
 */
-
-
-function candstr(cand, useFoundation=false){
-  let protocol = 'protocol' in cand? cand.protocol.toUpperCase(): '';
-  let type = 'candidateType' in cand? cand.candidateType: 'type' in cand? cand.type: '';
-  let address = useFoundation? ('foundation' in cand? cand.foundation: ''): 
-    (type!='prflx' && 'address' in cand)? cand.address: ''; // peer-reflexive (prflx) IP is redacted anyway!
-  let port = 'port' in cand? cand.port: '';
-  return `${protocol} ${type} ${address}:${port}`;
-}
-
-function updateHeight(dom, max){
-  dom.style.height = 0; // shrink (reset)
-  let h = dom.scrollHeight;
-  if(h > max){ h = max; }
-  dom.style.height = h + "px"; // expand
-  dom.scrollTop = dom.scrollHeight; // scroll to bottom
-}
-
-async function deflateStr(s, base64 = false, format = 'gzip'){
-  const ss = new Blob([s]).stream().pipeThrough(new CompressionStream(format)); //stream of deflated string
-  const sb = await new Response(ss).arrayBuffer().then(b => new Uint8Array(b)); //deflated byte array
-  return base64? btoa(String.fromCharCode.apply(null,sb)): sb;
-}
-
-async function inflateStr(sb, format = 'gzip'){
-  if(!(sb instanceof Uint8Array || typeof sb == 'string')){ 
-    throw new TypeError('Parameter sb is not an instance of Uint8Array nor a string.');}
-  if(typeof sb == 'string'){ sb = Uint8Array.from(atob(sb), c => c.charCodeAt(0));}
-  const ss = new Blob([sb]).stream().pipeThrough(new DecompressionStream(format)); //stream of inflated sb
-  const s = await new Response(ss).text(); //inflated string
-  return s;
-}

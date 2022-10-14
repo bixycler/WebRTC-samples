@@ -102,6 +102,17 @@ table.candidate-pair-table .right{
   text-align: right;
 }
 
+table.transport-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+table.transport-table td{
+  text-align: center;
+  border-width: 1px 0;
+  border-style: solid;
+  padding: 3px 0;
+}
+
 @media screen and (max-width: 400px) {
   button {
     width: 83px;

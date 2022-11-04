@@ -14,6 +14,9 @@ hangupButton.disabled = true;
 startButton.addEventListener('click', start);
 hangupButton.addEventListener('click', hangup);
 
+const sendAlso = document.getElementById('sendalso');
+const recvOnly = document.getElementById('recvonly');
+const sendVidres = document.getElementById('send-vidres');
 const offer = document.getElementById('offer');
 const answer = document.getElementById('answer');
 const offerStatus = document.getElementById('offer-status');
@@ -24,6 +27,9 @@ const callerCandidates = document.getElementById('caller-candidates');
 const receiverCandidates = document.getElementById('receiver-candidates');
 const coffer = {txt:offer, but:offerStatus, deflated:offerDeflated};
 const canswer = {txt:answer, but:answerStatus, deflated:answerDeflated};
+sendAlso.addEventListener('change', ()=>{
+  updateOnly(sendAlso,recvOnly,localVideo,sendVidres);
+});
 offerStatus.addEventListener('click', async()=>{
   await pasteFromClipboard(offer, offerDeflated.checked);
   updateTooltip(offerStatus,offer,'(done)', offerDeflated.checked);
@@ -60,9 +66,6 @@ async function start() {
     localHashId.innerText = fpv.hashCode(true);
     localHashId.title = 'Fingerprint:'+fpv;
   }
-
-  // 0. Start UserMedia
-  await startLocalStream();
 
   // 1. Start PeerConnection
   pc = new RTCPeerConnection(pc_config);
@@ -144,21 +147,33 @@ async function start() {
   });
 
   // 2. Set RemoteDescription
+  sendAlso.disabled = true;
   console.log('pc.setRemoteDescription() start');
   try {
     await pc.setRemoteDescription({type: 'offer', sdp: offer.value});
     console.log('pc.setRemoteDescription() completed: ', pc.remoteDescription);
     console.log('Added remote stream to pc', pc.getReceivers()); //pc.getTransceivers()
+    if(sendAlso.checked){
+      let recvonly = (offer.value.match(/a=(sendrecv|sendonly|recvonly)/g).filter(m=>(m!='a=sendonly')).length==0);
+      sendAlso.checked = !recvonly; 
+      updateOnly(sendAlso,recvOnly,localVideo,sendVidres);
+      if(recvonly){ console.log('Switch to "recvonly" mode');}
+    }
   } catch (e) {
     handleError('pc.setRemoteDescription():', e);
     return;
   }
 
   // 3. Add Tracks
+  if(sendAlso.checked){ await startLocalStream(); }
   if (localStream) {
     //localStream.getTracks().forEach(track => pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]}));
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); // REUSE transceivers created by pc.setRemoteDescription() [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
     console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
+  }else{
+    sendAlso.checked = false;
+    updateOnly(sendAlso,recvOnly,localVideo,sendVidres);
+    console.log('Transceivers direction = "recvonly"', pc.getTransceivers());
   }
 
   // 4. Set LocalDescription

@@ -112,24 +112,44 @@ async function getLocalStream(fallBackOnNotAllowed=true){
   let stream = null;
   console.log('Requesting local stream (user media or screen capture) ...');
   try {
-    stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+    stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
   } catch (e) {
-    if(e.name=='NotFoundError' || e.name=='NotReadableError'
-      || (fallBackOnNotAllowed && e.name=='NotAllowedError')){
+    if(errFallBack(e,fallBackOnNotAllowed)){
       try {
-        stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: true});
+        stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
       } catch (e) {
-        handleError('getDisplayMedia():', e);
-        return null;
+        if(errFallBack(e,fallBackOnNotAllowed)){
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+          } catch (e) {
+            if(errFallBack(e,fallBackOnNotAllowed)){
+              try {
+                stream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: true});
+              } catch (e) {
+                handleError('getDisplayMedia(video[,audio]):', e);
+                return null;
+              }
+            }else{
+              handleError('getUserMedia(audio):', e);
+              return null;
+            }
+          }
+        }else{
+          handleError('getUserMedia(video):', e);
+          return null;
+        }
       }
     }else{
-      handleError('getUserMedia():', e);
+      handleError('getUserMedia(video,audio):', e);
       return null;
     }
   }
   return stream;
 }
-
+function errFallBack(e, fallBackOnNotAllowed){
+  return (e.name=='NotFoundError' || e.name=='NotReadableError'
+  || (fallBackOnNotAllowed && e.name=='NotAllowedError'));
+}
 
 /////////////////////// DOM untils \\\\\\\\\\\\\\\\\\\\\\\
 

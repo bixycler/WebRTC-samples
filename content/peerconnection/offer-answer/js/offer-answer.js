@@ -109,6 +109,10 @@ errmsgCopy.addEventListener('click', async()=>{
   updateTooltip(errmsgCopy,errmsg,'(done)');
 })
 
+function updateOnly(also, only, video, vidres){
+  only.hidden = also.checked;
+  video.hidden = vidres.hidden = !only.hidden;
+}
 
 //////////////////////// Action functions \\\\\\\\\\\\\\\\\\\\\\\\
 

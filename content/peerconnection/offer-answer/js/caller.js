@@ -16,6 +16,8 @@ startButton.addEventListener('click', start);
 callButton.addEventListener('click', call);
 hangupButton.addEventListener('click', hangup);
 
+const recvAlso = document.getElementById('recvalso');
+const sendOnly = document.getElementById('sendonly');
 const offer = document.getElementById('offer');
 const answer = document.getElementById('answer');
 const offerStatus = document.getElementById('offer-status');
@@ -26,6 +28,9 @@ const callerCandidates = document.getElementById('caller-candidates');
 const receiverCandidates = document.getElementById('receiver-candidates');
 const coffer = {txt:offer, but:offerStatus, deflated:offerDeflated};
 const canswer = {txt:answer, but:answerStatus, deflated:answerDeflated};
+recvAlso.addEventListener('change', ()=>{
+  updateOnly(recvAlso,sendOnly,remoteVideo,recvVidres);
+});
 offerStatus.addEventListener('click', async()=>{
   await copyToClipboard(offer, offerDeflated.checked);
   updateTooltip(offerStatus,offer,'(done)', offerDeflated.checked);
@@ -160,10 +165,18 @@ async function start() {
     });
 
   // 2. Add Tracks
+  recvAlso.disabled = true;
   if (localStream) {
     //for(let track of localStream.getTracks()){ pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]})};
     for(let track of localStream.getTracks()){ if(track.kind==track.kind){pc.addTrack(track, localStream)}}; //=> pc.addTransceiver() because no transceiver yet [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
     console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
+    if(!recvAlso.checked){
+      let trsvs = pc.getTransceivers()
+      for(let trsv of trsvs){ 
+        trsv.direction = "sendonly"; 
+      }
+      console.log('Transceivers direction set to "sendonly"',trsvs);
+    }
   }
 
   // >> on negotiationneeded { setLocalDescription()} >> ICE gathering candidates
@@ -182,6 +195,13 @@ async function call() {
     await pc.setRemoteDescription({type: 'answer', sdp: answer.value});
     console.log('pc.setRemoteDescription() completed: ', pc.remoteDescription);
     console.log('Added remote stream to pc', pc.getReceivers()); //pc.getTransceivers()
+    if(recvAlso.checked){
+      let trsvs = pc.getTransceivers();
+      let sendonly = (trsvs.filter(trsv=>(trsv.currentDirection!="sendonly")).length==0);
+      recvAlso.checked = !sendonly; 
+      updateOnly(recvAlso,sendOnly,remoteVideo,recvVidres);
+      if(sendonly){ console.log('Transceivers current direction = "sendonly"',trsvs);}
+    }
   } catch (e) {
     handleError('pc.setRemoteDescription():', e);
     return;

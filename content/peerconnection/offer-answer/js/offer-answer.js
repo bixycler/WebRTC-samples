@@ -6,14 +6,23 @@ var localStream = null; // the media stream on this peer
 var pc = null, transports = [/*{id,dtls,components,coll#,dtlsStates,iceStates,candStates}*/], ices = new Set(); // the peer connection with its transports
 var dc = {local:null, remote:null, connected:false}; // the data channels of pc
 var pid = null; // the certificate of the identity of this peer
-const pc_config = {
+var dummyServerURL = 'turn:turn.beowulfchain.com:12345';
+var pc_config = {
   'iceServers': [
     {
       'urls': 'stun:stun.l.google.com:19302'
     },
-    { 'urls': 'turn:turn.beowulfchain.com:12345', // pseudo server for arguments passing to pc
+    { 'urls': dummyServerURL, // dummy server for crypto params
           'username': 'crypto:AES_CM_128_HMAC_SHA1_80',
           'credential': "inline:aKeyWithLength30bytes/40charsInBase64+++" // To be parsed by SrtpTransport::ParseKeyParams()
+    },
+    { 'urls': dummyServerURL, // dummy server for audio params
+          'username': 'audio:0',
+          'credential': "SSRC:1111 FID:1112 FEC:1113"
+    },
+    { 'urls': dummyServerURL, // dummy server for video params
+          'username': 'video:0',
+          'credential': "SSRC:961 FID:962 FEC:963"
     },
   ],
   'bundlePolicy': 'balanced', // number of transports. Note: some old peer is still bundle-unaware
@@ -31,6 +40,11 @@ const dc_config = {
 
 const localStylesheet = document.getElementById('local-stylesheet').sheet;
 const cssDeleted = localStylesheet.cssRules[0];
+
+const masterKey = document.getElementById('master-key');
+const cipherSuite = document.getElementById('cipher-suite');
+const videoTrackConfig = document.getElementById('video-track-config');
+const audioTrackConfig = document.getElementById('audio-track-config');
 
 const localHashId = document.getElementById('local-hash-id');
 const remoteHashId = document.getElementById('remote-hash-id');

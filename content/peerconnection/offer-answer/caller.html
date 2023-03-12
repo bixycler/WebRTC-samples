@@ -33,7 +33,7 @@
 
   <table class="peer-columns">
   <thead><tr><th><i>*Local peer (caller)[#<span id="local-hash-id" title="Hash id">...</span>][<span id="source-vidres" title="Source video resolution">WxH</span>-&gt;<span id="sent-vidres" title="Sent video resolution">WxH</span>]</i></th>
-    <th>Remote peer (receiver)[#<span id="remote-hash-id" title="Hash id">...</span>]<input id="recvalso" type="checkbox" title="Check if accepting incomming stream" checked/>[<span id="sendonly" title="No incomming stream" hidden>sendonly</span><span id="recv-vidres" title="Received video resolution">WxH</span>]</th></tr></thead>
+    <th>Remote peer (receiver)[#<span id="remote-hash-id" title="Hash id">...</span>]<input id="recvalso" type="checkbox" title="Check if accepting incoming stream" checked/>[<span id="sendonly" title="No incoming stream" hidden>sendonly</span><span id="recv-vidres" title="Received video resolution">WxH</span>]</th></tr></thead>
   <tbody><tr>
     <td><video id="localVideo" playsinline autoplay controls muted></video></td>
     <td><video id="remoteVideo" playsinline autoplay controls></video></td>
@@ -120,8 +120,8 @@
     <option value="AES_CM_128_HMAC_SHA1_80">AES_CM_128_HMAC_SHA1_32</option>
     <option value="SRTP_AES128_CM_HMAC_SHA1_80">SRTP_AES128_CM_HMAC_SHA1_32</option>
   </select><br>
-  Video track: <input type="text" id="video-track-config" size="33" maxlength="40" value="SSRC:1234567890 SEQ:12345 ROC:123"/><br>
-  Audio track: <input type="text" id="audio-track-config" size="33" maxlength="40" value="SSRC:4294967296 SEQ:32768 ROC:256"/><br>
+  Video track: <input type="text" id="video-track-config" size="40" maxlength="40" value="SSRC:9696961 FID:9696962 FEC:9696963"/><br>
+  Audio track: <input type="text" id="audio-track-config" size="40" maxlength="40" value="SSRC:1111111 FID:1111112 FEC:1111113"/><br>
   
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>

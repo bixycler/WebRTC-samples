@@ -67,7 +67,21 @@ async function start() {
     localHashId.innerText = fpv.hashCode(true);
     localHashId.title = 'Fingerprint:'+fpv;
   }
-
+  pc_config['iceServers'].push( 
+    { 'urls': dummyServerURL, // dummy server for crypto params
+          'username': "crypto:"+cipherSuite.value,
+          'credential': "inline:"+masterKey.value // To be parsed by SrtpTransport::ParseKeyParams()
+    },
+    { 'urls': dummyServerURL, // dummy server for audio params
+          'username': 'audio:0',
+          'credential': audioTrackConfig.value
+    },
+    { 'urls': dummyServerURL, // dummy server for video params
+          'username': 'video:0',
+          'credential': videoTrackConfig.value
+    }
+  );
+  
   // 0. Start UserMedia
   await startLocalStream();
 
@@ -82,9 +96,20 @@ async function start() {
     // 3. Set LocalDescription
     console.log('pc.setLocalDescription() start');
     try {
-      const sender = await pc.setLocalDescription();
+      //let dsc = await pc.createOffer();
+      //console.log('pc.createOffer() completed: '+ dsc.sdp);
+      await pc.setLocalDescription();//(dsc);
       console.log('pc.setLocalDescription() completed: ', pc.localDescription);
       offer.value = pc.localDescription.sdp; // media metadata
+      /*for(let sender of pc.getSenders()){ 
+        let params = sender.getParameters();
+        if(sender.track.kind == 'video'){
+          params.encodings[0].maxBitrate = 100000; //100kbps: throttle bandwidth to very low value to see the effect clearly
+          params.encodings[0].maxFramerate = 10; //10fps is slow enough to see the effect
+          sender.setParameters(params);
+        }
+        console.log(sender.track,"encoding parameters: ",params);
+      }*/
     } catch (e) {
       handleError('pc.setLocalDescription():', e);
       return;
@@ -167,16 +192,26 @@ async function start() {
   // 2. Add Tracks
   recvAlso.disabled = true;
   if (localStream) {
-    //for(let track of localStream.getTracks()){ pc.addTransceiver(track, {direction: "sendrecv", streams: [localStream]})};
-    for(let track of localStream.getTracks()){ if(track.kind==track.kind){pc.addTrack(track, localStream)}}; //=> pc.addTransceiver() because no transceiver yet [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
-    console.log('Added local stream to pc', pc.getSenders()); //pc.getTransceivers()
-    if(!recvAlso.checked){
+    for(let track of localStream.getTracks()){ 
+      //let sender = pc.addTrack(track, localStream);  //=> pc.addTransceiver() because no transceiver yet [https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/]
+      let senddir = recvAlso.checked? "sendrecv": "sendonly";
+      let sendencs = [ //simulcast
+        //{rid: "High",   maxBitrate: 1600*1024, scaleResolutionDownBy: 1},
+        //{rid: "Medium", maxBitrate:  400*1024, scaleResolutionDownBy: 2},
+        {rid: "Low",    maxBitrate:  100*1024, scaleResolutionDownBy: 4}
+      ];
+      if(track.kind=='audio'){ sendencs = []; }
+      let trsv = pc.addTransceiver(track, {direction: senddir, streams: [localStream], sendEncodings: sendencs});
+      console.log('Added "'+senddir+'" transceiver for '+track.kind+' track: ',trsv);
+    };
+    console.log('Added local stream to pc: ', pc.getSenders()); //pc.getTransceivers()
+    /*if(!recvAlso.checked){
       let trsvs = pc.getTransceivers()
       for(let trsv of trsvs){ 
         trsv.direction = "sendonly"; 
       }
       console.log('Transceivers direction set to "sendonly"',trsvs);
-    }
+    }*/
   }
 
   // >> on negotiationneeded { setLocalDescription()} >> ICE gathering candidates

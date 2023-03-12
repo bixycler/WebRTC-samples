@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC code samples">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <meta itemprop="description" content="Client-side WebRTC code samples">
+    <meta itemprop="image" content="../../../images/webrtc-icon-192x192.png">
+    <meta itemprop="name" content="WebRTC code samples">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta id="theme-color" name="theme-color" content="#ffffff">
+
+    <base target="_blank">
+
+    <title>Capture - Record canvas stream</title>
+
+    <link rel="icon" sizes="192x192" href="../../../images/webrtc-icon-192x192.png">
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../../../css/main.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+
+</head>
+
+<body>
+
+  <div id="container">
+    <h1><a href="https://bixycler.github.io/WebRTC-samples/" title="WebRTC samples homepage">WebRTC samples</a>
+        <span>Stream Capture</span></h1>
+
+    <p>Use the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder"><code>MediaRecorder</code> API</a> to record the <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream">canvas' <code>captureStream</code></a>.</p>
+
+    <table class="peer-columns">
+      <thead><tr><th>Capture stream</th>
+        <th>Playback stream</th></tr></thead>
+      <tbody><tr>
+        <td><video id="captureVideo" playsinline autoplay></video></td>
+        <td><video id="playbackVideo" playsinline autoplay controls></video></td>
+    </tr></tbody></table>
+
+    <div class="box">
+      <button id="captureButton">Capture</button>
+      <span id="recorderState"><!--🔴⏸❌--></span>
+      <button id="recordButton">Record</button>
+      <button id="stopButton">Stop</button>
+      <button id="playButton">Play</button>
+      <button id="downloadButton">Download</button>
+    </div>
+
+    <a id="recordedFile" style="display: none;">recorded file</a>
+
+    <p>View the console to see logging. After "Capture" button pressed, the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaStream">MediaStream</a> object <code>captureStream</code>, and the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder">MediaRecorder</a> object <code>mediaRecorder</code> can be inspected in the console.</p>
+
+    <a href="https://github.com/bixycler/WebRTC-samples/tree/main/content/capture/canvas-record"
+       title="View source for this page on GitHub" id="viewSource">View source on GitHub</a>
+  
+  </div>
+  
+
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="../../../js/utils.js" async></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>

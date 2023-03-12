@@ -33,7 +33,7 @@
 
   <table class="peer-columns">
   <thead><tr><th>Remote peer (caller)[#<span id="remote-hash-id" title="Hash id">...</span>][<span id="recv-vidres" title="Received video resolution">WxH</span>]</th>
-    <th><i>*Local peer (receiver)[#<span id="local-hash-id" title="Hash id">...</span>]<input id="sendalso" type="checkbox" title="Check if sending outcomming stream" checked/>[<span id="recvonly" title="No outcomming stream" hidden>recvonly</span><span id="send-vidres"><span id="source-vidres" title="Source video resolution">WxH</span>-&gt;<span id="sent-vidres" title="Sent video resolution">WxH</span></span>]</i></th></tr></thead>
+    <th><i>*Local peer (receiver)[#<span id="local-hash-id" title="Hash id">...</span>]<input id="sendalso" type="checkbox" title="Check if sending stream out" checked/>[<span id="recvonly" title="No outgoing stream" hidden>recvonly</span><span id="send-vidres"><span id="source-vidres" title="Source video resolution">WxH</span>-&gt;<span id="sent-vidres" title="Sent video resolution">WxH</span></span>]</i></th></tr></thead>
   <tbody><tr>
     <td><video id="remoteVideo" playsinline autoplay controls></video></td>
     <td><video id="localVideo" playsinline autoplay controls muted></video></td>
@@ -44,6 +44,7 @@
 
   <div class="box">
     <button id="startButton">Start</button>
+    <button id="restartButton">Restart</button>
     <button id="hangupButton">Hang Up</button>
   </div>
 
@@ -110,7 +111,7 @@
   <h4>Receiver's ICE Candidates:</h4>
   <textarea id="receiver-candidates" class="text-candidates"></textarea>
 
-  <h4>Caller's configuration:</h4>
+  <h4>Receiver's configuration:</h4>
   Master key:
   <input type="text" id="master-key" size="40" maxlength="40" value="aKeyWithLength30bytes/40charsInBase64+++"/>
   <select id="cipher-suite">
@@ -119,8 +120,8 @@
     <option value="AES_CM_128_HMAC_SHA1_80">AES_CM_128_HMAC_SHA1_32</option>
     <option value="SRTP_AES128_CM_HMAC_SHA1_80">SRTP_AES128_CM_HMAC_SHA1_32</option>
   </select><br>
-  Video track: <input type="text" id="video-track-config" size="33" maxlength="40" value="SSRC:1234567890 SEQ:12345 ROC:123"/><br>
-  Audio track: <input type="text" id="audio-track-config" size="33" maxlength="40" value="SSRC:4294967296 SEQ:32768 ROC:256"/><br>
+  Video track: <input type="text" id="video-track-config" size="40" maxlength="40" value="SSRC:9999991 FID:9999992 FEC:9999993"/><br>
+  Audio track: <input type="text" id="audio-track-config" size="40" maxlength="40" value="SSRC:2222221 FID:2222222 FEC:2222223"/><br>
 
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>

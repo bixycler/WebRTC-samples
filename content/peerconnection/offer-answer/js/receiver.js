@@ -8,10 +8,13 @@ const role = 'receiver';
 //////////////////////// DOM elements & Data \\\\\\\\\\\\\\\\\\\\\\\\
 
 const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
 const hangupButton = document.getElementById('hangupButton');
 startButton.disabled = true;
+restartButton.disabled = true;
 hangupButton.disabled = true;
 startButton.addEventListener('click', start);
+restartButton.addEventListener('click', restart);
 hangupButton.addEventListener('click', hangup);
 
 const sendAlso = document.getElementById('sendalso');
@@ -66,6 +69,20 @@ async function start() {
     localHashId.innerText = fpv.hashCode(true);
     localHashId.title = 'Fingerprint:'+fpv;
   }
+  pc_config['iceServers'].push( 
+    { 'urls': dummyServerURL, // dummy server for crypto params
+          'username': "crypto:"+cipherSuite.value,
+          'credential': "inline:"+masterKey.value // To be parsed by SrtpTransport::ParseKeyParams()
+    },
+    { 'urls': dummyServerURL, // dummy server for audio params
+          'username': 'audio:0',
+          'credential': audioTrackConfig.value
+    },
+    { 'urls': dummyServerURL, // dummy server for video params
+          'username': 'video:0',
+          'credential': videoTrackConfig.value
+    }
+  );
 
   // 1. Start PeerConnection
   pc = new RTCPeerConnection(pc_config);
@@ -189,7 +206,41 @@ async function start() {
 
   // >> ICE gathering candidates [>> conntected [>> on track]]
 
+  restartButton.disabled = false;
   hangupButton.disabled = false;
+}
+
+async function restart() {
+
+  // 2. Set RemoteDescription
+  sendAlso.disabled = true;
+  console.log('pc.setRemoteDescription() start');
+  try {
+    await pc.setRemoteDescription({type: 'offer', sdp: offer.value});
+    console.log('pc.setRemoteDescription() completed: ', pc.remoteDescription);
+    console.log('Added remote stream to pc', pc.getReceivers()); //pc.getTransceivers()
+    if(sendAlso.checked){
+      let recvonly = (offer.value.match(/a=(sendrecv|sendonly|recvonly)/g).filter(m=>(m!='a=sendonly')).length==0);
+      sendAlso.checked = !recvonly; 
+      updateOnly(sendAlso,recvOnly,localVideo,sendVidres);
+      if(recvonly){ console.log('Switch to "recvonly" mode');}
+    }
+  } catch (e) {
+    handleError('pc.setRemoteDescription():', e);
+    return;
+  }
+
+  // 4. Set LocalDescription
+  console.log('pc.setLocalDescription() start');
+  try {
+    await pc.setLocalDescription();
+    console.log('pc.setLocalDescription() completed: ', pc.localDescription);
+    answer.value = pc.localDescription.sdp; // media metadata
+  } catch (e) {
+    handleError('pc.setLocalDescription():', e);
+    return;
+  }
+
 }
 
 async function hangup() {
@@ -200,6 +251,7 @@ async function hangup() {
   updateStats(); collectTransports();
   pc = null; trIdBase += transports.length; transports = []; ices.clear();
   hangupButton.disabled = true;
+  restartButton.disabled = true;
   startButton.disabled = false;
   offer.value = '';
   answer.value = '';
